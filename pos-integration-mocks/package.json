@@ -1,0 +1,14 @@
+{
+  "name": "pos-integration-mocks",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "mocks/*"
+  ],
+  "scripts": {
+    "build": "npm -w @blawnt/pos-mock-gateway run build",
+    "dev:gateway": "npm -w @blawnt/pos-mock-gateway run dev",
+    "dev:lightspeed": "npm -w @blawnt/lightspeed-mock run dev",
+    "up:lightspeed": "docker compose -f mocks/lightspeed/docker-compose.yml up --build"
+  }
+}

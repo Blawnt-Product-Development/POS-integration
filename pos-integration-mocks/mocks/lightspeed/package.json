@@ -1,0 +1,12 @@
+{
+  "name": "@blawnt/lightspeed-mock",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "PORT=4020 PRISM_URL=http://prism:4010 FIXTURES_DIR=./fixtures IGNORE_QUERY_KEYS=cursor,pageToken,limit,offset LOG_LEVEL=dev npm -w @blawnt/pos-mock-gateway run dev",
+    "build": "npm -w @blawnt/pos-mock-gateway run build"
+  },
+  "dependencies": {
+    "@blawnt/pos-mock-gateway": "0.1.0"
+  }
+}

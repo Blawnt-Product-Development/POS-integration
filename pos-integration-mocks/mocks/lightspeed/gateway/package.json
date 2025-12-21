@@ -1,0 +1,10 @@
+{
+  "name": "lightspeed-mock-gateway",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0",
+    "morgan": "^1.10.0"
+  }
+}

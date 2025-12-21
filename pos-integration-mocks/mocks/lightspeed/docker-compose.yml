@@ -1,0 +1,24 @@
+services:
+  prism:
+    image: stoplight/prism:4
+    command: mock -h 0.0.0.0 /tmp/openapi.json
+    ports:
+      - "4010:4010"
+    volumes:
+      - ./openapi.json:/tmp/openapi.json:ro
+
+  gateway:
+    build:
+      context: ./gateway
+    environment:
+      - PORT=4020
+      - PRISM_URL=http://prism:4010
+      - FIXTURES_DIR=/fixtures
+      - IGNORE_QUERY_KEYS=cursor,pageToken,limit,offset
+      - LOG_LEVEL=dev
+    volumes:
+      - ./fixtures:/fixtures
+    ports:
+      - "4020:4020"
+    depends_on:
+      - prism
