@@ -5,11 +5,9 @@ async function runDailySync() {
   const db = new Database(process.env.DATABASE_URL!);
   
   // Get all active connections
-  const result = await db.pool.query(
-    'SELECT * FROM pos_connections WHERE is_active = true'
-  );
+  const connections = await db.getActiveConnections();
 
-  for (const connection of result.rows) {
+  for (const connection of connections) {
     const client = new LightspeedClient(
       process.env.LIGHTSPEED_API_URL || 'http://localhost:4020',
       connection.api_key

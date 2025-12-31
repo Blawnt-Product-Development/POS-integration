@@ -1,25 +1,25 @@
 {
-    "name": "@blawnt/lightspeed-connector",
-    "version": "0.1.0",
-    "main": "dist/index.js",
-    "scripts": {
-      "build": "tsc",
-      "dev": "ts-node-dev --respawn src/index.ts",
-      "test": "jest"
-      //"test:watch": "jest --watch",
-      //"test:coverage": "jest --coverage"
-    },
-    "dependencies": {
-      "axios": "^1.6.0",
-      "pg": "^8.11.3"
-    },
-    "devDependencies": {
-      // "@types/jest": "^29.5.8",
-      "@types/pg": "^8.10.9",
-      "@types/node": "^20.10.0",
-      //"jest": "^29.7.0",
-      //"ts-jest": "^29.1.1",
-      "typescript": "^5.3.2",
-      "ts-node-dev": "^2.0.0"
-    }
+  "name": "@blawnt/lightspeed-connector",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.8",
+    "@types/pg": "^8.10.9",
+    "@types/node": "^20.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.2",
+    "ts-node-dev": "^2.0.0"
   }
+}

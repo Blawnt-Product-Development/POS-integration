@@ -83,4 +83,12 @@ export class Database {
       [date, connectionId]
     );
   }
+
+  // Get all active connections
+  async getActiveConnections(): Promise<POSConnection[]> {
+    const result = await this.pool.query(
+      'SELECT * FROM pos_connections WHERE is_active = true'
+    );
+    return result.rows as POSConnection[];
+  }
 }
