@@ -1,6 +1,6 @@
 -- connectors/lightspeed/migrations/001_create_tables.sql
 
--- Sales table
+-- Sales table (Generic)
 CREATE TABLE IF NOT EXISTS sales (
   id VARCHAR(255) PRIMARY KEY,
   restaurant_id VARCHAR(255) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS sales (
 
 CREATE INDEX idx_sales_restaurant_date ON sales(restaurant_id, transaction_date);
 
--- POS Connections table
+-- POS Connections table (Generic)
 CREATE TABLE IF NOT EXISTS pos_connections (
   id VARCHAR(255) PRIMARY KEY,
   user_id VARCHAR(255) NOT NULL,
@@ -35,7 +35,7 @@ CREATE INDEX idx_connections_user ON pos_connections(user_id);
 
 
 
--- Creating tables--
+-- Creating tables for POS-INTEGRATION PROJECT--
 
  -- DROP TABLE IF EXISTS sales CASCADE; -- Note: this deletes the table in pgadmin by the table name.
  -- DROP TABLE IF EXISTS pos_connections CASCADE; -- another example of deleting a table in pgadmin.
