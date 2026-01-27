@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { Database } from "./database";
 
 async function main() {

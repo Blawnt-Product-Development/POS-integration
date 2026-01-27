@@ -1,7 +1,10 @@
 // connectors/lightspeed/src/database.ts
 // Database operations for Lightspeed POS
-import { Pool } from 'pg';
-import { Sale, POSConnection } from './models';
+
+import dotenv from "dotenv"; //added this because of an issue..
+dotenv.config(); //added this
+import { Pool } from "pg";
+import { Store, Sale, SaleLine, DailySales, POSConnection } from "./models";
 
 export class Database {
   private pool: Pool;
@@ -10,85 +13,128 @@ export class Database {
     this.pool = new Pool({ connectionString });
   }
 
-  // Save a sale (upsert - insert or update if exists)
-  async saveSale(sale: Sale): Promise<void> {
-    const query = `
-      INSERT INTO sales (
-        id, restaurant_id, pos_transaction_id, pos_provider,
-        total_amount, currency, transaction_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (pos_provider, pos_transaction_id) 
-      DO UPDATE SET
-        total_amount = EXCLUDED.total_amount,
-        transaction_date = EXCLUDED.transaction_date
-    `;
-
-    await this.pool.query(query, [
-      sale.id,
-      sale.restaurant_id,
-      sale.pos_transaction_id,
-      sale.pos_provider,
-      sale.total_amount,
-      sale.currency,
-      sale.transaction_date
-    ]);
-  }
-
-  // Save multiple sales
-  async saveSales(sales: Sale[]): Promise<void> {
-    for (const sale of sales) {
-      await this.saveSale(sale);
-    }
-  }
-
-  // Save POS connection
-  async saveConnection(connection: POSConnection): Promise<void> {
-    const query = `
-      INSERT INTO pos_connections (
-        id, user_id, restaurant_id, provider, api_key, api_secret, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (user_id, restaurant_id, provider)
-      DO UPDATE SET
-        api_key = EXCLUDED.api_key,
-        api_secret = EXCLUDED.api_secret,
-        is_active = EXCLUDED.is_active
-    `;
-
-    await this.pool.query(query, [
-      connection.id,
-      connection.user_id,
-      connection.restaurant_id,
-      connection.provider,
-      connection.api_key,
-      connection.api_secret,
-      connection.is_active
-    ]);
-  }
-
-  // Get connection by ID
-  async getConnection(connectionId: string): Promise<POSConnection | null> {
-    const result = await this.pool.query(
-      'SELECT * FROM pos_connections WHERE id = $1',
-      [connectionId]
-    );
-
-    if (result.rows.length === 0) return null;
-    return result.rows[0] as POSConnection;
-  }
-
-  // Update last sync date
-  async updateLastSyncDate(connectionId: string, date: Date): Promise<void> {
+  // ---------------- STORES ----------------
+  async saveStore(store: Store): Promise<void> {
     await this.pool.query(
-      'UPDATE pos_connections SET last_sync_date = $1 WHERE id = $2',
-      [date, connectionId]
+      `
+      INSERT INTO stores (businessLocationId, storeName)
+      VALUES ($1, $2)
+      ON CONFLICT (businessLocationId)
+      DO UPDATE SET storeName = EXCLUDED.storeName
+      `,
+      [store.businessLocationId, store.storeName]
     );
   }
 
-  // Get all active connections
-  async getActiveConnections(): Promise<POSConnection[]> {
-    const result = await this.pool.query(
-      'SELECT * FROM pos_connections WHERE is_active = true'
+  // ---------------- SALES ----------------
+  async saveSale(sale: Sale): Promise<void> {
+    await this.pool.query(
+      `
+      INSERT INTO sales (receiptId, timeClosed, cancelled, businessLocationId)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (receiptId)
+      DO UPDATE SET
+        timeClosed = EXCLUDED.timeClosed,
+        cancelled = EXCLUDED.cancelled
+      `,
+      [
+        sale.receiptId,
+        sale.timeClosed,
+        sale.cancelled,
+        sale.businessLocationId,
+      ]
     );
+  }
+
+  // ---------------- SALE LINES ----------------
+  async saveSaleLine(line: SaleLine): Promise<void> {
+    await this.pool.query(
+      `
+      INSERT INTO sale_lines (
+        saleLineId, sku, name, quantity,
+        menuListPrice, discountAmount, taxAmount, serviceCharge,
+        receiptId
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT (saleLineId)
+      DO UPDATE SET
+        quantity = EXCLUDED.quantity,
+        menuListPrice = EXCLUDED.menuListPrice,
+        discountAmount = EXCLUDED.discountAmount,
+        taxAmount = EXCLUDED.taxAmount,
+        serviceCharge = EXCLUDED.serviceCharge
+      `,
+      [
+        line.saleLineId,
+        line.sku,
+        line.name,
+        line.quantity,
+        line.menuListPrice,
+        line.discountAmount,
+        line.taxAmount,
+        line.serviceCharge,
+        line.receiptId,
+      ]
+    );
+  }
+
+  // ---------------- DAILY SALES ----------------
+  async saveDailySales(d: DailySales): Promise<void> {
+    await this.pool.query(
+      `
+      INSERT INTO daily_sales (
+        businessLocationId, businessDate, dataComplete, totalSales
+      )
+      VALUES ($1,$2,$3,$4)
+      ON CONFLICT (businessLocationId, businessDate)
+      DO UPDATE SET
+        dataComplete = EXCLUDED.dataComplete,
+        totalSales = EXCLUDED.totalSales,
+        updated_at = now()
+      `,
+      [
+        d.businessLocationId,
+        d.businessDate,
+        d.dataComplete,
+        d.totalSales,
+      ]
+    );
+  }
+
+  // ---------------- POS CONNECTIONS ----------------
+  async saveConnection(conn: POSConnection): Promise<void> {
+    await this.pool.query(
+      `
+      INSERT INTO pos_connections (
+        id, store_id, access_token, refresh_token, last_sync
+      )
+      VALUES ($1,$2,$3,$4,$5)
+      ON CONFLICT (store_id)
+      DO UPDATE SET
+        access_token = EXCLUDED.access_token,
+        refresh_token = EXCLUDED.refresh_token,
+        last_sync = EXCLUDED.last_sync,
+        updated_at = now()
+      `,
+      [
+        conn.id,
+        conn.store_id,
+        conn.access_token,
+        conn.refresh_token,
+        conn.last_sync,
+      ]
+    );
+  }
+
+  async getActiveConnections(): Promise<POSConnection[]> {
+    const result = await this.pool.query(`SELECT * FROM pos_connections`);
     return result.rows as POSConnection[];
+  }
+
+  async updateLastSyncDate(id: string, date: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE pos_connections SET last_sync = $1, updated_at = now() WHERE id = $2`,
+      [date, id]
+    );
   }
 }

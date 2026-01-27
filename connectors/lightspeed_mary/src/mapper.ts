@@ -1,40 +1,36 @@
 // connectors/lightspeed/src/mapper.ts
-// Mapper to convert Lightspeed API response to our Sale database format
-
-import { Sale } from "./models";
+// Mapper to convert Lightspeed API response to our Sale database 
+import { Sale, SaleLine } from "./models";
 
 export class LightspeedMapper {
-  static toSales(apiSales: any[], restaurantId: string): Sale[] {
-    const results: Sale[] = [];
+  static toSales(apiSales: any[], businessLocationId: string): Sale[] {
+    return apiSales.map((s) => ({
+      receiptId: s.receiptId,
+      timeClosed: s.timeClosed,
+      cancelled: s.cancelled ?? false,
+      businessLocationId,
+    }));
+  }
 
-    for (const sale of apiSales || []) {
-      const orderDate = sale.timeClosed || sale.timeOpened || new Date().toISOString();
-      const receiptId = sale.receiptId ?? sale.id ?? "unknown";
+  static toSaleLines(apiSales: any[]): SaleLine[] {
+    const lines: SaleLine[] = [];
 
-      // Ensure salesLines exists and is an array
-      const lines = Array.isArray(sale.salesLines) ? sale.salesLines : [];
-
-      for (const line of lines) {
-        const saleLineId = line.saleLineId ?? line.id ?? Math.random().toString(36).slice(2);
-
-        results.push({
-          id: `${receiptId}-${saleLineId}`, // unique per line item
-          restaurant_id: restaurantId,
-          pos_transaction_id: receiptId,
-          pos_provider: "lightspeed",
-
-          // Amount fields
-          total_amount: Number(line.menuListPrice ?? line.price ?? 0),
-
-          // Currency (mock API usually doesn't include this)
-          currency: sale.currency ?? "USD",
-
-          // Date
-          transaction_date: new Date(orderDate)
+    for (const sale of apiSales) {
+      for (const line of sale.salesLines ?? []) {
+        lines.push({
+          saleLineId: line.saleLineId,
+          sku: line.sku ?? null,
+          name: line.name ?? null,
+          quantity: line.quantity ?? 0,
+          menuListPrice: line.menuListPrice ?? null,
+          discountAmount: line.discountAmount ?? null,
+          taxAmount: line.taxAmount ?? null,
+          serviceCharge: line.serviceCharge ?? null,
+          receiptId: sale.receiptId,
         });
       }
     }
 
-    return results;
+    return lines;
   }
 }

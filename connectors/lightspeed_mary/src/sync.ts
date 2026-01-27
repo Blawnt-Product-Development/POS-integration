@@ -1,67 +1,63 @@
 // connectors/lightspeed/src/sync.ts
 // Sync operations for Lightspeed POS
-import { LightspeedClient } from './client';
-import { LightspeedMapper } from './mapper';
-import { Database } from './database';
-import { POSConnection } from './models';
+
+import { LightspeedClient } from "./client";
+import { LightspeedMapper } from "./mapper";
+import { Database } from "./database";
+import { POSConnection } from "./models";
 
 export class LightspeedSync {
-  constructor(
-    private client: LightspeedClient,
-    private db: Database
-  ) {}
+  constructor(private client: LightspeedClient, private db: Database) {}
 
-  // Initial history load (from date to date)
-  async initialLoad(
-    connection: POSConnection,
-    fromDate: Date,
-    toDate: Date
-  ): Promise<{ fetched: number; stored: number; errors: number }> {
-    const stats = { fetched: 0, stored: 0, errors: 0 };
+  async initialLoad(connection: POSConnection, from: Date, to: Date) {
+    const apiSales = await this.client.fetchSales(
+      connection.store_id,
+      from,
+      to
+    );
 
-    try {
-      // 1. Fetch from API
-      const apiSales = await this.client.fetchSales(
-        connection.restaurant_id,
-        fromDate,
-        toDate
-      );
-      stats.fetched = apiSales.length;
+    const sales = LightspeedMapper.toSales(apiSales, connection.store_id);
+    const lines = LightspeedMapper.toSaleLines(apiSales);
 
-      // 2. Convert to our format
-      const sales = LightspeedMapper.toSales(apiSales, connection.restaurant_id);
+    for (const s of sales) await this.db.saveSale(s);
+    for (const l of lines) await this.db.saveSaleLine(l);
 
-      // 3. Save to database
-      for (const sale of sales) {
-        try {
-          await this.db.saveSale(sale);
-          stats.stored++;
-        } catch (error) {
-          console.error('Failed to save sale:', error);
-          stats.errors++;
-        }
-      }
-
-      // 4. Update last sync date
-      await this.db.updateLastSyncDate(connection.id, toDate);
-
-      return stats;
-    } catch (error) {
-      console.error('Initial load failed:', error);
-      throw error;
-    }
+    await this.db.updateLastSyncDate(connection.id, to.toISOString());
   }
 
-  // Daily sync (syncs yesterday's data)
-  async dailySync(connection: POSConnection): Promise<number> {
+  async dailySync(connection: POSConnection) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const daily = await this.client.fetchDailySales(
+      connection.store_id,
+      yesterday
+    );
 
-    const result = await this.initialLoad(connection, yesterday, today);
-    return result.stored;
+    const sales = LightspeedMapper.toSales(daily.sales, connection.store_id);
+    const lines = LightspeedMapper.toSaleLines(daily.sales);
+
+    for (const s of sales) await this.db.saveSale(s);
+    for (const l of lines) await this.db.saveSaleLine(l);
+
+    await this.db.saveDailySales({
+      businessLocationId: connection.store_id,
+      businessDate: yesterday.toISOString().split("T")[0],
+      dataComplete: daily.dataComplete,
+      totalSales: daily.totalSales ?? null,
+    });
+  }
+  //For part 4 
+  async runDailySync() {
+    const connections = await this.db.getActiveConnections();
+
+    for (const conn of connections) {
+      try {
+        await this.dailySync(conn);
+      } catch (err) {
+        console.error("Failed daily sync for", conn.store_id, err);
+      }
+    }
   }
 }

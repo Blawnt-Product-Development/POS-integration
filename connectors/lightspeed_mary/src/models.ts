@@ -1,35 +1,46 @@
+
+//Changed models.ts from part 4 of intern guide.
 // connectors/lightspeed/src/models.ts
-// TypeScript types/interfaces
+// Store from /f/data/businesses
+export interface Store {
+  businessLocationId: string;
+  storeName: string;
+}
 
+// Sale from /sales
+export interface Sale {
+  receiptId: string;
+  timeClosed: string;
+  cancelled: boolean;
+  businessLocationId: string;
+}
 
-// What we get from Lightspeed API
-export interface LightspeedSale {
-    id: string;
-    total: number;
-    dateTime: string;
-    locationId: string;
-    // ... other fields from API
-  }
-  
-  // What we store in our database
-  export interface Sale {
-    id: string;
-    restaurant_id: string;
-    pos_transaction_id: string;
-    pos_provider: string;
-    total_amount: number;
-    currency: string;
-    transaction_date: Date;
-  }
-  
-  // POS Connection (credentials)
-  export interface POSConnection {
-    id: string;
-    user_id: string;
-    restaurant_id: string;
-    provider: string;
-    api_key: string;        // Encrypted in real app, plain for now
-    api_secret: string;     // Encrypted in real app, plain for now
-    is_active: boolean;
-    last_sync_date: Date | null;
-  }
+// Sale line from /sales
+export interface SaleLine {
+  saleLineId: string;
+  sku: string | null;
+  name: string | null;
+  quantity: number;
+  menuListPrice: number | null;
+  discountAmount: number | null;
+  taxAmount: number | null;
+  serviceCharge: number | null;
+  receiptId: string;
+}
+
+// Daily sales from /sales-daily
+export interface DailySales {
+  businessLocationId: string;
+  businessDate: string;
+  dataComplete: boolean;
+  totalSales: number | null;
+}
+
+// POS connection
+export interface POSConnection {
+  id: string;
+  store_id: string;     // businessLocationId
+  access_token: string;
+  refresh_token: string | null;
+  last_sync: string | null;
+}

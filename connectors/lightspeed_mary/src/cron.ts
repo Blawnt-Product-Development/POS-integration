@@ -1,16 +1,20 @@
+import dotenv from "dotenv";
+dotenv.config();
 import cron from "node-cron";
-import { Sync } from "./sync";
+import { LightspeedSync } from "./sync";
+import { LightspeedClient } from "./client";
+import { Database } from "./database";
+//import "dotenv/config";
 
-const sync = new Sync();
+const db = new Database(process.env.DATABASE_URL!);
+const client = new LightspeedClient(
+  process.env.LIGHTSPEED_API_URL!,
+  process.env.LIGHTSPEED_API_KEY!
+);
 
-// Run every day at 2 AM
+const sync = new LightspeedSync(client, db);
+
 cron.schedule("0 2 * * *", async () => {
   console.log("Running daily sync at 2 AM");
   await sync.runDailySync();
 });
-
-// Manual test
-(async () => {
-  console.log("Running manual sync...");
-  await sync.runDailySync();
-})();
