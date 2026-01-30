@@ -1,13 +1,13 @@
 
 //Changed models.ts from part 4 of intern guide.
-// connectors/lightspeed/src/models.ts
+// connectors/lightspeed_mary/src/models.ts
 // Store from /f/data/businesses
+
 export interface Store {
   businessLocationId: string;
   storeName: string;
 }
 
-// Sale from /sales
 export interface Sale {
   receiptId: string;
   timeClosed: string;
@@ -15,7 +15,6 @@ export interface Sale {
   businessLocationId: string;
 }
 
-// Sale line from /sales
 export interface SaleLine {
   saleLineId: string;
   sku: string | null;
@@ -28,7 +27,6 @@ export interface SaleLine {
   receiptId: string;
 }
 
-// Daily sales from /sales-daily
 export interface DailySales {
   businessLocationId: string;
   businessDate: string;
@@ -36,11 +34,10 @@ export interface DailySales {
   totalSales: number | null;
 }
 
-// POS connection
 export interface POSConnection {
   id: string;
-  store_id: string;     // businessLocationId
-  access_token: string;
-  refresh_token: string | null;
+  business_id: string;   // matches stores.businessLocationId
+  api_key: string;       // matches your DB + client
   last_sync: string | null;
+  active: boolean;
 }

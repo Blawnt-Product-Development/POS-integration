@@ -66,14 +66,36 @@ CREATE TABLE sale_lines (
     FOREIGN KEY (receiptId) REFERENCES sales(receiptId)
 );
 
+-- CREATE TABLE pos_connections (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     restaurant_id VARCHAR(50) NOT NULL,
+--     access_token TEXT NOT NULL,
+--     refresh_token TEXT,
+--     last_sync TIMESTAMPTZ,
+--     created_at TIMESTAMPTZ DEFAULT now(),
+--     updated_at TIMESTAMPTZ DEFAULT now()
+-- );
+
+
+DROP TABLE IF EXISTS pos_connections; -- new pos_connections test
+
 CREATE TABLE pos_connections (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    restaurant_id VARCHAR(50) NOT NULL,
-    access_token TEXT NOT NULL,
-    refresh_token TEXT,
+    id TEXT PRIMARY KEY,
+    business_id VARCHAR(50) NOT NULL REFERENCES stores(businessLocationId),
+    api_key TEXT NOT NULL,
     last_sync TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
+    active BOOLEAN DEFAULT TRUE
+);
+
+ -- inserting a test into pos_connections
+
+ INSERT INTO pos_connections (id, business_id, api_key, last_sync, active)
+VALUES (
+  'test-connection',
+  '1234567890',
+  'anything',
+  NULL,
+  TRUE
 );
 
 CREATE TABLE daily_sales (
@@ -112,7 +134,7 @@ ON daily_sales(businessLocationId, businessDate);
 CREATE INDEX idx_products_group ON products(accountingGroup);
 
 -- POS_CONNECTIONS
-CREATE INDEX idx_connections_restaurant ON pos_connections(restaurant_id);
+CREATE INDEX idx_connections_business ON pos_connections(business_id);
 
 /*
 NOTES (What I learned): 

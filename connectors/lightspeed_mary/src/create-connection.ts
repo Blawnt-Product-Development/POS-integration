@@ -1,18 +1,18 @@
 
-//Part 4 in Intern guide
+//Part 4 in Intern guide 
+// src/create-connection.ts
 import "dotenv/config";
 import { Database } from "./database";
-import { v4 as uuid } from "uuid";
 
 async function main() {
   const db = new Database(process.env.DATABASE_URL!);
 
   await db.saveConnection({
-    id: uuid(),
-    store_id: "12345",
-    access_token: "anything",
-    refresh_token: null,
+    id: "test-connection",
+    business_id: "1234567890", // your real store ID
+    api_key: "anything",
     last_sync: null,
+    active: true
   });
 
   console.log("Connection saved.");

@@ -1,28 +1,43 @@
+// src/test-initial-load.ts
+import dotenv from "dotenv";
+dotenv.config();
+
 import { LightspeedSync } from "./sync";
 import { LightspeedClient } from "./client";
 import { Database } from "./database";
-import "dotenv/config";
-console.log("LIGHTSPEED_API_URL =", process.env.LIGHTSPEED_API_URL);
-console.log("LIGHTSPEED_API_KEY =", process.env.LIGHTSPEED_API_KEY);
-console.log("DATABASE_URL =", process.env.DATABASE_URL); 
-async function main() {
-  const db = new Database(process.env.DATABASE_URL!);
-  const client = new LightspeedClient(process.env.LIGHTSPEED_API_URL!, process.env.LIGHTSPEED_API_KEY!);
 
+async function main() {
+  console.log("Starting initial load test...");
+
+  const db = new Database(process.env.DATABASE_URL!);
+  const client = new LightspeedClient(
+    process.env.LIGHTSPEED_API_URL!,
+    process.env.LIGHTSPEED_API_KEY!
+  );
   const sync = new LightspeedSync(client, db);
 
-const connection = {
-  id: "test-connection",
-  store_id: "1234567890",
-  access_token: process.env.LIGHTSPEED_API_KEY!,
-  refresh_token: null,
-  last_sync: null,
-  active:true
-};
+  //Get real connection from DataBase
+  const connections = await db.getActiveConnections();
+  if (connections.length === 0) {
+    console.error("No active connections found in pos_connections.");
+    process.exit(1);
+  }
 
-  await sync.initialLoad(connection, new Date("2023-01-01"), new Date("2023-01-02"));
+  const conn = connections[0];
+  console.log("Using connection:", conn);
+
+  //Choose date range for initial load
+  const from = new Date("2023-01-01");
+  const to = new Date("2023-01-02");
+
+  console.log("Running initial load...");
+  await sync.initialLoad(conn, from, to);
+
   console.log("Initial load completed.");
 
+  // Closes DataBase pool so Node can exit
+  await db["pool"].end();
+  process.exit(0);
 }
 
 main();

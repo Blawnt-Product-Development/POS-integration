@@ -88,44 +88,59 @@ export class LightspeedClient {
   }
 
   async fetchSales(businessLocationId: string, from: Date, to: Date) {
-    const results: any[] = [];
-    let nextPageToken: string | null = null;
+  const results: any[] = [];
+  let nextPageToken: string | null = null;
 
-    do {
-      const res: any = await axios.get(
-        `${this.baseUrl}/f/v2/business-location/${businessLocationId}/sales`,
-        {
-          headers: this.headers(),
-          params: {
-            from: from.toISOString(),
-            to: to.toISOString(),
-            pageSize: 100,
-            nextPageToken,
-          },
-        }
-      );
+  do {
+    console.log("Calling /sales with:", {
+      from: from.toISOString(),
+      to: to.toISOString(),
+      pageSize: 100,
+      nextPageToken: nextPageToken ?? undefined,
+    });
 
-      results.push(...res.data.sales);
-      nextPageToken = res.data.nextPageToken ?? null;
-    } while (nextPageToken);
-
-    return results;
-  }
-
-  async fetchDailySales(businessLocationId: string, date: Date) {
     const res: any = await axios.get(
-      `${this.baseUrl}/f/v2/business-location/${businessLocationId}/sales-daily`,
+      `${this.baseUrl}/f/v2/business-location/${businessLocationId}/sales`,
       {
         headers: this.headers(),
         params: {
-          date: date.toISOString().split("T")[0],
+          from: from.toISOString(),
+          to: to.toISOString(),
+          pageSize: 100,
+          nextPageToken: nextPageToken ?? undefined,
         },
+        timeout: 5000,
       }
     );
+    //testing..
+    console.log("Raw sales response:", JSON.stringify(res.data, null, 2));
 
-    return res.data;
-  }
+    results.push(...(res.data.sales ?? []));
+    nextPageToken = res.data.nextPageToken ?? null;
 
+    // MOCK API FIX: stop infinite loop
+    if (nextPageToken === "string") {
+      console.log("Mock API returned fake nextPageToken 'string'. Breaking loop.");
+      break;
+    }
+
+  } while (nextPageToken);
+
+  return results;
+}
+
+async fetchDailySales(businessLocationId: string, date: string) {
+  const res: any = await axios.get(
+    `${this.baseUrl}/f/v2/business-location/${businessLocationId}/sales-daily`,
+    {
+      headers: this.headers(),
+      params: { date }, // already YYYY-MM-DD
+      timeout: 5000,
+    }
+  );
+
+  return res.data;
+}
   // Test connection
   async testConnection(): Promise<boolean> {
     try {

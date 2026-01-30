@@ -1,8 +1,8 @@
 // connectors/lightspeed/src/database.ts
 // Database operations for Lightspeed POS
 
-import dotenv from "dotenv"; //added this because of an issue..
-dotenv.config(); //added this
+import dotenv from "dotenv";
+dotenv.config();
 import { Pool } from "pg";
 import { Store, Sale, SaleLine, DailySales, POSConnection } from "./models";
 
@@ -47,36 +47,48 @@ export class Database {
   }
 
   // ---------------- SALE LINES ----------------
-  async saveSaleLine(line: SaleLine): Promise<void> {
-    await this.pool.query(
-      `
-      INSERT INTO sale_lines (
-        saleLineId, sku, name, quantity,
-        menuListPrice, discountAmount, taxAmount, serviceCharge,
-        receiptId
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-      ON CONFLICT (saleLineId)
-      DO UPDATE SET
-        quantity = EXCLUDED.quantity,
-        menuListPrice = EXCLUDED.menuListPrice,
-        discountAmount = EXCLUDED.discountAmount,
-        taxAmount = EXCLUDED.taxAmount,
-        serviceCharge = EXCLUDED.serviceCharge
-      `,
-      [
-        line.saleLineId,
-        line.sku,
-        line.name,
-        line.quantity,
-        line.menuListPrice,
-        line.discountAmount,
-        line.taxAmount,
-        line.serviceCharge,
-        line.receiptId,
-      ]
-    );
-  }
+ async saveSaleLine(line: SaleLine): Promise<void> {
+  // Generate fallback saleLineId if missing (mock API issue)
+  const saleLineId =
+    line.saleLineId ??
+    `${line.receiptId}-${line.sku}-${Math.random().toString(36).slice(2, 8)}`;
+
+  // Normalize numeric fields
+  const quantity = parseFloat(String(line.quantity ?? "0"));
+  const menuListPrice = parseFloat(String(line.menuListPrice ?? "0"));
+  const discountAmount = parseFloat(String(line.discountAmount ?? "0"));
+  const taxAmount = parseFloat(String(line.taxAmount ?? "0"));
+  const serviceCharge = parseFloat(String(line.serviceCharge ?? "0"));
+
+  await this.pool.query(
+    `
+    INSERT INTO sale_lines (
+      saleLineId, sku, name, quantity,
+      menuListPrice, discountAmount, taxAmount, serviceCharge,
+      receiptId
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    ON CONFLICT (saleLineId)
+    DO UPDATE SET
+      quantity = EXCLUDED.quantity,
+      menuListPrice = EXCLUDED.menuListPrice,
+      discountAmount = EXCLUDED.discountAmount,
+      taxAmount = EXCLUDED.taxAmount,
+      serviceCharge = EXCLUDED.serviceCharge
+    `,
+    [
+      saleLineId,
+      line.sku,
+      line.name,
+      quantity,
+      menuListPrice,
+      discountAmount,
+      taxAmount,
+      serviceCharge,
+      line.receiptId,
+    ]
+  );
+}
 
   // ---------------- DAILY SALES ----------------
   async saveDailySales(d: DailySales): Promise<void> {
@@ -101,39 +113,81 @@ export class Database {
     );
   }
 
-  // ---------------- POS CONNECTIONS ----------------
+  // ---------------- STORES (READ) ----------------
+    async getStores() {
+    const result = await this.pool.query(
+      `
+      SELECT 
+        businessLocationId AS "businessLocationId",
+        storeName AS "storeName"
+      FROM stores
+      `
+    );
+    return result.rows;
+  }
+
+  // ---------------- DAILY SALES (READ) ----------------
+  async getDailySales(businessLocationId: string, businessDate: string) {
+    const result = await this.pool.query(
+      `
+      SELECT *
+      FROM daily_sales
+      WHERE businessLocationId = $1
+        AND businessDate = $2
+      `,
+      [businessLocationId, businessDate]
+    );
+    return result.rows;
+  }
+
+  async getLastSyncDate(connectionId: string): Promise<Date | null> {
+  const result = await this.pool.query(
+    `SELECT last_sync FROM pos_connections WHERE id = $1`,
+    [connectionId]
+  );
+
+  if (result.rows.length === 0) return null;
+  return result.rows[0].last_sync;
+  }
+
+
+
+
+  // ---------------- POS CONNECTIONS (FIXED) ----------------
   async saveConnection(conn: POSConnection): Promise<void> {
     await this.pool.query(
       `
       INSERT INTO pos_connections (
-        id, store_id, access_token, refresh_token, last_sync
+        id, business_id, api_key, last_sync, active
       )
       VALUES ($1,$2,$3,$4,$5)
-      ON CONFLICT (store_id)
+      ON CONFLICT (id)
       DO UPDATE SET
-        access_token = EXCLUDED.access_token,
-        refresh_token = EXCLUDED.refresh_token,
+        business_id = EXCLUDED.business_id,
+        api_key = EXCLUDED.api_key,
         last_sync = EXCLUDED.last_sync,
-        updated_at = now()
+        active = EXCLUDED.active
       `,
       [
         conn.id,
-        conn.store_id,
-        conn.access_token,
-        conn.refresh_token,
+        conn.business_id,
+        conn.api_key,
         conn.last_sync,
+        conn.active,
       ]
     );
   }
 
   async getActiveConnections(): Promise<POSConnection[]> {
-    const result = await this.pool.query(`SELECT * FROM pos_connections`);
+    const result = await this.pool.query(
+      `SELECT * FROM pos_connections WHERE active = TRUE`
+    );
     return result.rows as POSConnection[];
   }
 
   async updateLastSyncDate(id: string, date: string): Promise<void> {
     await this.pool.query(
-      `UPDATE pos_connections SET last_sync = $1, updated_at = now() WHERE id = $2`,
+      `UPDATE pos_connections SET last_sync = $1 WHERE id = $2`,
       [date, id]
     );
   }
