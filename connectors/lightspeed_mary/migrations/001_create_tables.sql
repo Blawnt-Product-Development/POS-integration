@@ -1,40 +1,5 @@
 -- connectors/lightspeed/migrations/001_create_tables.sql
 
--- Sales table (Generic)
-CREATE TABLE IF NOT EXISTS sales (
-  id VARCHAR(255) PRIMARY KEY,
-  restaurant_id VARCHAR(255) NOT NULL,
-  pos_transaction_id VARCHAR(255) NOT NULL,
-  pos_provider VARCHAR(50) NOT NULL,
-  total_amount DECIMAL(10, 2) NOT NULL,
-  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-  transaction_date TIMESTAMP NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  
-  UNIQUE(pos_provider, pos_transaction_id)
-);
-
-CREATE INDEX idx_sales_restaurant_date ON sales(restaurant_id, transaction_date);
-
--- POS Connections table (Generic)
-CREATE TABLE IF NOT EXISTS pos_connections (
-  id VARCHAR(255) PRIMARY KEY,
-  user_id VARCHAR(255) NOT NULL,
-  restaurant_id VARCHAR(255) NOT NULL,
-  provider VARCHAR(50) NOT NULL,
-  api_key VARCHAR(255) NOT NULL,
-  api_secret VARCHAR(255) NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  last_sync_date TIMESTAMP,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  
-  UNIQUE(user_id, restaurant_id, provider)
-);
-
-CREATE INDEX idx_connections_user ON pos_connections(user_id);
-
-
-
 -- Creating tables for POS-INTEGRATION PROJECT--
 
  -- DROP TABLE IF EXISTS sales CASCADE; -- Note: this deletes the table in pgadmin by the table name.
@@ -65,17 +30,6 @@ CREATE TABLE sale_lines (
     receiptId VARCHAR(100) NOT NULL,
     FOREIGN KEY (receiptId) REFERENCES sales(receiptId)
 );
-
--- CREATE TABLE pos_connections (
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     restaurant_id VARCHAR(50) NOT NULL,
---     access_token TEXT NOT NULL,
---     refresh_token TEXT,
---     last_sync TIMESTAMPTZ,
---     created_at TIMESTAMPTZ DEFAULT now(),
---     updated_at TIMESTAMPTZ DEFAULT now()
--- );
-
 
 DROP TABLE IF EXISTS pos_connections; -- new pos_connections test
 

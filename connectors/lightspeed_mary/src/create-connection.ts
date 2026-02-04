@@ -1,5 +1,4 @@
 
-//Part 4 in Intern guide 
 // src/create-connection.ts
 import "dotenv/config";
 import { Database } from "./database";

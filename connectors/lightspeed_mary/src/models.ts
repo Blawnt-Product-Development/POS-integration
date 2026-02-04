@@ -1,6 +1,3 @@
-
-//Changed models.ts from part 4 of intern guide.
-// connectors/lightspeed_mary/src/models.ts
 // Store from /f/data/businesses
 
 export interface Store {

@@ -17,7 +17,7 @@ async function main() {
 
   const sync = new LightspeedSync(client, db);
 
-  // ⭐ Run daily sync once for testing
+  // Run daily sync once for testing
   console.log("Running daily sync now (test mode)...");
   await sync.runDailySync();
 
@@ -27,7 +27,7 @@ async function main() {
 // });
 
   console.log("Daily sync finished. Exiting.");
-  process.exit(0); // ⭐ Force program to end
+  process.exit(0); // Force program to end
 }
 
 main();

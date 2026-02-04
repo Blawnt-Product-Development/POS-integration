@@ -31,42 +31,6 @@ export class LightspeedClient {
     };
   }
 
-  // Fetch sales from Lightspeed API (original)
-  // async fetchSales(
-  //   businessLocationId: string,
-  //   fromDate: Date,
-  //   toDate: Date
-  // ): Promise<LightspeedSale[]> {
-  //   const response = await this.api.get(
-  //     `/f/v2/business-location/${businessLocationId}/sales`,
-  //     {
-  //       params: {
-  //         from: fromDate.toISOString(),
-  //         to: toDate.toISOString(),
-  //         pageSize: 100
-  //       }
-  //     }
-  //   );
-  //
-  //   return response.data.sales || [];
-  // }
-
-  // mock testing to fetchSales (part 2)
-  // async fetchSales(): Promise<any> {
-  //   const response = await this.api.get(
-  //     '/f/v2/business-location/1/sales',
-  //     {
-  //       params: {
-  //         from: new Date('2023-01-01').toISOString(),
-  //         to: new Date('2023-01-02').toISOString(),
-  //         pageSize: 100
-  //       }
-  //     }
-  //   );
-  //
-  //   return response.data.sales || [];
-  // }
-
   async fetchStores() {
     const res: any = await axios.get(`${this.baseUrl}/f/data/businesses`, {
       headers: this.headers(),
