@@ -1,19 +1,23 @@
-// connectors/lightspeed/src/mapper.ts
-// Mapper to convert Lightspeed API response to our Sale database 
+//src/mapper.ts
+// Mapper to convert Lightspeed API response to our Sale database
+// This file is like a translator - it converts data from API format to database format
 import { Sale, SaleLine } from "./models";
 
+// This class converts API data to our database format
 export class LightspeedMapper {
+  // Convert API sales data to our Sale objects
   static toSales(apiSales: any[], businessLocationId: string): Sale[] {
+    // For each sale in the API response...
     return apiSales.map((s) => ({
-      receiptId: s.receiptId,
-      timeClosed: s.timeClosed,
-      cancelled: s.cancelled ?? false,
-      businessLocationId,
+      receiptId: s.receiptId,                // Copy receipt ID
+      timeClosed: s.timeClosed,              // Copy timestamp
+      cancelled: s.cancelled ?? false,       // Default to false if not provided
+      businessLocationId,                    // Add the store ID
     }));
   }
-
+ // Convert API sales data to SaleLine objects (individual items)
   static toSaleLines(apiSales: any[]): SaleLine[] {
-    const lines: SaleLine[] = [];
+    const lines: SaleLine[] = []; // We'll collect all line items here
 
     for (const sale of apiSales) {
       for (const line of sale.salesLines ?? []) {

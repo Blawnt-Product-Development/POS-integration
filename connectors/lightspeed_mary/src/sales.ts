@@ -1,4 +1,6 @@
-// src/test-initial-load.ts
+// src/test-initial-load.ts ---->  sales.ts
+// Tests loading historical sales data
+// This is for when we first set up a store and need old data
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,7 +24,7 @@ async function main() {
     console.error("No active connections found in pos_connections.");
     process.exit(1);
   }
-
+ // Use the first active connection
   const conn = connections[0];
   console.log("Using connection:", conn);
 

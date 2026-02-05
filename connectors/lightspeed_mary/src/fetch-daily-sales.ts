@@ -1,4 +1,5 @@
 // src/fetch-daily-sales.ts
+// Daily sync test
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -8,14 +9,14 @@ import { LightspeedMapper } from "./mapper";
 
 async function main() {
   console.log("Starting daily sales fetch test...");
-
+  // Set up database and API client
   const db = new Database(process.env.DATABASE_URL!);
   const client = new LightspeedClient(
     process.env.LIGHTSPEED_API_URL!,
     process.env.LIGHTSPEED_API_KEY!
   );
 
-  // 1. Get stores
+  // 1. Get stores from database
   const stores = await db.getStores();
   if (stores.length === 0) {
     console.error("No stores found. Run fetch-stores.ts first.");
@@ -40,6 +41,7 @@ async function main() {
     console.log("Raw daily response:", JSON.stringify(daily, null, 2));
 
     // 3. Check dataComplete
+    // some days might not have all the data yet
     if (!daily.dataComplete) {
       console.log(
         `Store ${store.businessLocationId}: dataComplete = false. Skipping.`
@@ -62,7 +64,7 @@ async function main() {
       `Saved ${sales.length} sales and ${lines.length} sale lines for store ${store.businessLocationId}`
     );
   }
-
+  // Clean up database connection
   await (db as any).pool.end();
   process.exit(0);
 }
